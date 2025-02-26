@@ -15,14 +15,6 @@
         h1 {
             color: #333;
         }
-        .week-highlight {
-            background-color: #ffcc00;
-            padding: 10px;
-            border-radius: 5px;
-            display: inline-block;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
         table {
             width: 80%;
             margin: auto;
@@ -31,20 +23,26 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
+            table-layout: fixed; /* Fixe la largeur des colonnes */
         }
         th, td {
             border: 1px solid #ddd;
             padding: 15px;
             text-align: center;
+            width: 20%; /* Uniformise la largeur des colonnes */
+            word-wrap: break-word;
         }
         th {
             background-color: #4CAF50;
             color: white;
         }
-        .chargement { background-color: #FFA07A; }
-        .impression { background-color: #87CEFA; }
-        .reception { background-color: #98FB98; }
-        .inventaire { background-color: #FFD700; }
+        .current-week {
+            background-color: #ffeb3b;
+            font-weight: bold;
+        }
+        .past-week {
+            background-color: #d3d3d3;
+        }
         select {
             width: 100%;
             padding: 5px;
@@ -52,46 +50,117 @@
             font-size: 16px;
             background: transparent;
         }
+        button {
+            margin: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto; /* Permet le scroll si trop de lignes */
+            margin: auto;
+            width: 85%;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
     <h1>Planning Hebdomadaire de l'Équipe</h1>
-    <div class="week-highlight">Semaine du <span id="current-week"></span></div>
-    <table>
-        <tr>
-            <th>Jour</th>
-            <th>Sylvain</th>
-            <th>Greg</th>
-            <th>Alex</th>
-        </tr>
-        <tr>
-            <td>Lundi</td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-        </tr>
-        <tr>
-            <td>Mardi</td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-        </tr>
-        <tr>
-            <td>Mercredi</td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-            <td><select><option class="chargement">Chargement / Déchargement</option><option class="impression">Impression des étiquettes</option><option class="reception">Réception des colis</option><option class="inventaire">Inventaire tournant</option></select></td>
-        </tr>
-    </table>
+    <button onclick="ajouterTache()">Ajouter une tâche</button>
+    <div class="table-container">
+        <table id="planning-table">
+            <tr>
+                <th>Semaine du</th>
+                <th>Chargement / Déchargement</th>
+                <th>Impression des étiquettes</th>
+                <th>Réception des colis</th>
+                <th>Inventaire tournant</th>
+            </tr>
+        </table>
+    </div>
     <script>
-        function getCurrentWeek() {
+        const equipe = ["Sylvain", "Greg", "Alex"];
+        const table = document.getElementById("planning-table");
+        let currentWeekRow = null;
+
+        function generateWeeks() {
             let today = new Date();
-            let firstDay = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-            let lastDay = new Date(today.setDate(today.getDate() + 4));
-            let options = { day: 'numeric', month: 'long' };
-            return firstDay.toLocaleDateString('fr-FR', options) + " au " + lastDay.toLocaleDateString('fr-FR', options);
+            let year = 2025;
+            let startDate = new Date(year, 0, 6); // Premier lundi de 2025
+
+            while (startDate.getFullYear() === year) {
+                let row = document.createElement("tr");
+                let weekCell = document.createElement("td");
+                weekCell.textContent = `Semaine du ${startDate.toLocaleDateString('fr-FR')}`;
+                
+                if (isCurrentWeek(startDate)) {
+                    row.classList.add("current-week");
+                    currentWeekRow = row; // Stocke la ligne de la semaine actuelle
+                } else if (startDate < new Date()) {
+                    row.classList.add("past-week");
+                }
+
+                row.appendChild(weekCell);
+                
+                for (let i = 0; i < table.rows[0].cells.length - 1; i++) {
+                    let cell = document.createElement("td");
+                    let select = document.createElement("select");
+                    equipe.forEach(member => {
+                        let option = document.createElement("option");
+                        option.textContent = member;
+                        select.appendChild(option);
+                    });
+                    cell.appendChild(select);
+                    row.appendChild(cell);
+                }
+
+                table.appendChild(row);
+                startDate.setDate(startDate.getDate() + 7);
+            }
+
+            if (currentWeekRow) {
+                setTimeout(() => {
+                    currentWeekRow.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 500);
+            }
         }
-        document.getElementById("current-week").textContent = getCurrentWeek();
+        
+        function isCurrentWeek(date) {
+            let today = new Date();
+            let startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 1));
+            let endOfWeek = new Date(today.setDate(today.getDate() + 6));
+            return date >= startOfWeek && date <= endOfWeek;
+        }
+
+        function ajouterTache() {
+            let newTask = prompt("Entrez le nom de la nouvelle tâche :");
+            if (newTask) {
+                let headerRow = table.rows[0];
+                let newTh = document.createElement("th");
+                newTh.textContent = newTask;
+                headerRow.appendChild(newTh);
+
+                for (let i = 1; i < table.rows.length; i++) {
+                    let cell = document.createElement("td");
+                    let select = document.createElement("select");
+                    equipe.forEach(member => {
+                        let option = document.createElement("option");
+                        option.textContent = member;
+                        select.appendChild(option);
+                    });
+                    cell.appendChild(select);
+                    table.rows[i].appendChild(cell);
+                }
+            }
+        }
+        
+        generateWeeks();
     </script>
 </body>
 </html>
