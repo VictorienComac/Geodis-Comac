@@ -3,56 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planning Équipe</title>
+    <title>Planning Logistique</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #fff;
             text-align: center;
-            background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
         }
         h1 {
-            color: #333;
+            margin-bottom: 20px;
         }
-        .table-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            overflow-y: auto;
-            max-height: 500px;
-            scroll-behavior: smooth;
-        }
-        table {
-            width: 80%;
-            border-collapse: collapse;
-            background: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 15px;
-            text-align: center;
-            min-width: 150px;
-        }
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .current-week {
-            background-color: #ffeb3b;
-        }
-        .past-week {
-            background-color: #d3d3d3;
-        }
-        select {
-            width: 100%;
-            padding: 5px;
-            border: none;
-            font-size: 16px;
-            background: transparent;
+        .container {
+            max-width: 90%;
+            margin: auto;
         }
         .btn-container {
             margin-bottom: 20px;
@@ -61,65 +28,74 @@
             margin: 10px;
             padding: 10px 15px;
             font-size: 16px;
-            background-color: #4CAF50;
-            color: white;
             border: none;
-            cursor: pointer;
             border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
         }
-        button:hover {
-            background-color: #45a049;
+        .add-btn { background: #4CAF50; color: white; }
+        .del-btn { background: #f44336; color: white; }
+        .export-btn { background: #007bff; color: white; }
+        button:hover { opacity: 0.8; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1e1e1e;
+            margin-top: 20px;
         }
-        .delete-btn {
-            background-color: #f44336;
+        th, td {
+            padding: 15px;
+            border: 1px solid #444;
+            text-align: center;
         }
-        .delete-btn:hover {
-            background-color: #d32f2f;
+        th {
+            background: #333;
+        }
+        .current-week {
+            background: #ffeb3b !important;
+            color: #000;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 5px;
+            border: none;
+            background: #333;
+            color: white;
         }
     </style>
 </head>
 <body>
-    <h1>Planning Hebdomadaire de l'Équipe</h1>
+    <h1>Planning Logistique</h1>
     <div class="btn-container">
-        <button onclick="ajouterTache()">Ajouter une tâche</button>
-        <button class="delete-btn" onclick="supprimerTache()">Supprimer une tâche</button>
+        <button class="add-btn" onclick="ajouterTache()"><i class="fa fa-plus"></i> Ajouter une tâche</button>
+        <button class="del-btn" onclick="supprimerTache()"><i class="fa fa-trash"></i> Supprimer une tâche</button>
+        <button class="export-btn" onclick="exporterPlanning()"><i class="fa fa-file-export"></i> Exporter</button>
     </div>
-    <div class="table-container">
+    <div class="container">
         <table id="planning-table">
             <tr>
                 <th>Semaine du</th>
-                <th>Chargement / Déchargement</th>
-                <th>Impression des étiquettes</th>
-                <th>Réception des colis</th>
-                <th>Inventaire tournant</th>
+                <th>Réception</th>
+                <th>Expédition</th>
+                <th>Stock</th>
+                <th>Inventaire</th>
             </tr>
         </table>
     </div>
     <script>
-        const equipe = ["Sylvain", "Greg", "Alex"];
+        const equipe = ["Sylvain", "Greg", "Alex", "Marie", "Nadia"];
         const table = document.getElementById("planning-table");
 
         function generateWeeks() {
-            let today = new Date();
-            let year = 2025;
-            let startDate = new Date(year, 0, 6); // Premier lundi de 2025
+            let startDate = new Date();
             let currentWeekRow = null;
-
-            while (startDate.getFullYear() === year) {
+            for (let i = 0; i < 10; i++) { // Générer 10 semaines
                 let row = document.createElement("tr");
                 let weekCell = document.createElement("td");
                 weekCell.textContent = `Semaine du ${startDate.toLocaleDateString('fr-FR')}`;
-                
-                if (isCurrentWeek(startDate)) {
-                    row.classList.add("current-week");
-                    currentWeekRow = row;
-                } else if (startDate < new Date()) {
-                    row.classList.add("past-week");
-                }
-
                 row.appendChild(weekCell);
-                
-                for (let i = 0; i < table.rows[0].cells.length - 1; i++) {
+                for (let j = 1; j < table.rows[0].cells.length; j++) {
                     let cell = document.createElement("td");
                     let select = document.createElement("select");
                     equipe.forEach(member => {
@@ -130,29 +106,10 @@
                     cell.appendChild(select);
                     row.appendChild(cell);
                 }
-
                 table.appendChild(row);
                 startDate.setDate(startDate.getDate() + 7);
             }
-
-            if (currentWeekRow) {
-                scrollToCurrentWeek(currentWeekRow);
-            }
         }
-        
-        function isCurrentWeek(date) {
-            let today = new Date();
-            let startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-            let endOfWeek = new Date(today.setDate(today.getDate() + 6));
-            return date >= startOfWeek && date <= endOfWeek;
-        }
-
-        function scrollToCurrentWeek(row) {
-            setTimeout(() => {
-                row.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 500);
-        }
-
         function ajouterTache() {
             let newTask = prompt("Entrez le nom de la nouvelle tâche :");
             if (newTask) {
@@ -160,7 +117,6 @@
                 let newTh = document.createElement("th");
                 newTh.textContent = newTask;
                 headerRow.appendChild(newTh);
-
                 for (let i = 1; i < table.rows.length; i++) {
                     let cell = document.createElement("td");
                     let select = document.createElement("select");
@@ -174,26 +130,36 @@
                 }
             }
         }
-
         function supprimerTache() {
             let headerRow = table.rows[0];
             if (headerRow.cells.length > 1) {
-                let lastColumnIndex = headerRow.cells.length - 1;
-                let columnName = headerRow.cells[lastColumnIndex].textContent;
-                let confirmDelete = confirm(`Voulez-vous vraiment supprimer la tâche "${columnName}" ?`);
-                
-                if (confirmDelete) {
-                    headerRow.deleteCell(lastColumnIndex);
-
+                let index = prompt("Entrez le numéro de la colonne à supprimer (1=Réception, 2=Expédition...)");
+                if (index && index >= 1 && index < headerRow.cells.length) {
+                    headerRow.deleteCell(index);
                     for (let i = 1; i < table.rows.length; i++) {
-                        table.rows[i].deleteCell(lastColumnIndex);
+                        table.rows[i].deleteCell(index);
                     }
                 }
             } else {
                 alert("Impossible de supprimer la dernière colonne !");
             }
         }
-
+        function exporterPlanning() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            for (let i = 0; i < table.rows.length; i++) {
+                let row = [];
+                for (let j = 0; j < table.rows[i].cells.length; j++) {
+                    row.push(table.rows[i].cells[j].innerText);
+                }
+                csvContent += row.join(",") + "\n";
+            }
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "planning_logistique.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
         generateWeeks();
     </script>
 </body>
