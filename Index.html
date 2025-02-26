@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi des Livraisons Geodis</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .container { margin-top: 50px; }
+        table { width: 80%; margin: 0 auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 10px; text-align: center; }
+        th { background-color: #0073e6; color: white; }
+        .delivered { background-color: #4CAF50; color: white; } /* Vert */
+        .in-transit { background-color: #FFA500; color: white; } /* Orange */
+        .not-shipped { background-color: #FF0000; color: white; } /* Rouge */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Suivi des Livraisons Geodis</h1>
+        <table>
+            <tr>
+                <th>Numéro de Suivi</th>
+                <th>Statut</th>
+                <th>Dernière Mise à Jour</th>
+            </tr>
+            <tbody id="trackingTable">
+                <!-- Les lignes seront ajoutées ici par le script -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function fetchTracking() {
+            // Simulation de données (remplace par une requête API Geodis si besoin)
+            const trackingData = [
+                { tracking_number: "123456789", status: "Livré", last_update: "2025-02-25" },
+                { tracking_number: "987654321", status: "En cours de livraison", last_update: "2025-02-26" },
+                { tracking_number: "456789123", status: "Non expédié", last_update: "2025-02-24" }
+            ];
+
+            const table = document.getElementById("trackingTable");
+            table.innerHTML = ""; // Efface les anciennes lignes
+
+            trackingData.forEach(item => {
+                const row = document.createElement("tr");
+
+                let statusClass = "";
+                if (item.status === "Livré") statusClass = "delivered";
+                else if (item.status === "En cours de livraison") statusClass = "in-transit";
+                else if (item.status === "Non expédié") statusClass = "not-shipped";
+
+                row.innerHTML = `
+                    <td>${item.tracking_number}</td>
+                    <td class="${statusClass}">${item.status}</td>
+                    <td>${item.last_update}</td>
+                `;
+
+                table.appendChild(row);
+            });
+        }
+
+        fetchTracking();
+        setInterval(fetchTracking, 300000); // Mise à jour toutes les 5 minutes
+    </script>
+</body>
+</html>
