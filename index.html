@@ -15,22 +15,27 @@
         h1 {
             color: #333;
         }
+        .table-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            overflow-y: auto;
+            max-height: 500px;
+            scroll-behavior: smooth;
+        }
         table {
             width: 80%;
-            margin: auto;
             border-collapse: collapse;
             background: white;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
-            table-layout: fixed; /* Fixe la largeur des colonnes */
         }
         th, td {
             border: 1px solid #ddd;
             padding: 15px;
             text-align: center;
-            width: 20%; /* Uniformise la largeur des colonnes */
-            word-wrap: break-word;
+            min-width: 150px;
         }
         th {
             background-color: #4CAF50;
@@ -38,7 +43,6 @@
         }
         .current-week {
             background-color: #ffeb3b;
-            font-weight: bold;
         }
         .past-week {
             background-color: #d3d3d3;
@@ -50,8 +54,11 @@
             font-size: 16px;
             background: transparent;
         }
+        .btn-container {
+            margin-bottom: 20px;
+        }
         button {
-            margin: 20px;
+            margin: 10px;
             padding: 10px 15px;
             font-size: 16px;
             background-color: #4CAF50;
@@ -60,19 +67,23 @@
             cursor: pointer;
             border-radius: 5px;
         }
-        .table-container {
-            max-height: 500px;
-            overflow-y: auto; /* Permet le scroll si trop de lignes */
-            margin: auto;
-            width: 85%;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+        button:hover {
+            background-color: #45a049;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
         }
     </style>
 </head>
 <body>
     <h1>Planning Hebdomadaire de l'Équipe</h1>
-    <button onclick="ajouterTache()">Ajouter une tâche</button>
+    <div class="btn-container">
+        <button onclick="ajouterTache()">Ajouter une tâche</button>
+        <button class="delete-btn" onclick="supprimerTache()">Supprimer une tâche</button>
+    </div>
     <div class="table-container">
         <table id="planning-table">
             <tr>
@@ -87,12 +98,12 @@
     <script>
         const equipe = ["Sylvain", "Greg", "Alex"];
         const table = document.getElementById("planning-table");
-        let currentWeekRow = null;
 
         function generateWeeks() {
             let today = new Date();
             let year = 2025;
             let startDate = new Date(year, 0, 6); // Premier lundi de 2025
+            let currentWeekRow = null;
 
             while (startDate.getFullYear() === year) {
                 let row = document.createElement("tr");
@@ -101,7 +112,7 @@
                 
                 if (isCurrentWeek(startDate)) {
                     row.classList.add("current-week");
-                    currentWeekRow = row; // Stocke la ligne de la semaine actuelle
+                    currentWeekRow = row;
                 } else if (startDate < new Date()) {
                     row.classList.add("past-week");
                 }
@@ -125,9 +136,7 @@
             }
 
             if (currentWeekRow) {
-                setTimeout(() => {
-                    currentWeekRow.scrollIntoView({ behavior: "smooth", block: "center" });
-                }, 500);
+                scrollToCurrentWeek(currentWeekRow);
             }
         }
         
@@ -136,6 +145,12 @@
             let startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 1));
             let endOfWeek = new Date(today.setDate(today.getDate() + 6));
             return date >= startOfWeek && date <= endOfWeek;
+        }
+
+        function scrollToCurrentWeek(row) {
+            setTimeout(() => {
+                row.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 500);
         }
 
         function ajouterTache() {
@@ -159,7 +174,26 @@
                 }
             }
         }
-        
+
+        function supprimerTache() {
+            let headerRow = table.rows[0];
+            if (headerRow.cells.length > 1) {
+                let lastColumnIndex = headerRow.cells.length - 1;
+                let columnName = headerRow.cells[lastColumnIndex].textContent;
+                let confirmDelete = confirm(`Voulez-vous vraiment supprimer la tâche "${columnName}" ?`);
+                
+                if (confirmDelete) {
+                    headerRow.deleteCell(lastColumnIndex);
+
+                    for (let i = 1; i < table.rows.length; i++) {
+                        table.rows[i].deleteCell(lastColumnIndex);
+                    }
+                }
+            } else {
+                alert("Impossible de supprimer la dernière colonne !");
+            }
+        }
+
         generateWeeks();
     </script>
 </body>
