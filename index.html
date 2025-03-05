@@ -3,164 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planning Logistique</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Mini WMS</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: #fff;
-            text-align: center;
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
             margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            margin-bottom: 20px;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
         .container {
-            max-width: 90%;
-            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
         }
-        .btn-container {
-            margin-bottom: 20px;
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
         }
         button {
-            margin: 10px;
-            padding: 10px 15px;
-            font-size: 16px;
+            background: #007BFF;
+            color: white;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
             transition: 0.3s;
         }
-        .add-btn { background: #4CAF50; color: white; }
-        .del-btn { background: #f44336; color: white; }
-        .export-btn { background: #007bff; color: white; }
-        button:hover { opacity: 0.8; }
+        button:hover {
+            background: #0056b3;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #1e1e1e;
-            margin-top: 20px;
+            margin-top: 10px;
+            font-size: 14px;
         }
         th, td {
-            padding: 15px;
-            border: 1px solid #444;
+            border: 1px solid #ddd;
+            padding: 8px;
             text-align: center;
         }
         th {
-            background: #333;
-        }
-        .current-week {
-            background: #ffeb3b !important;
-            color: #000;
-            font-weight: bold;
-        }
-        select {
-            width: 100%;
-            padding: 5px;
-            border: none;
-            background: #333;
+            background: #007BFF;
             color: white;
+        }
+        .actions button {
+            width: auto;
+            padding: 5px;
+            margin: 2px;
         }
     </style>
 </head>
 <body>
-    <h1>Planning Logistique</h1>
-    <div class="btn-container">
-        <button class="add-btn" onclick="ajouterTache()"><i class="fa fa-plus"></i> Ajouter une tâche</button>
-        <button class="del-btn" onclick="supprimerTache()"><i class="fa fa-trash"></i> Supprimer une tâche</button>
-        <button class="export-btn" onclick="exporterPlanning()"><i class="fa fa-file-export"></i> Exporter</button>
-    </div>
     <div class="container">
-        <table id="planning-table">
-            <tr>
-                <th>Semaine du</th>
-                <th>Réception</th>
-                <th>Expédition</th>
-                <th>Stock</th>
-                <th>Inventaire</th>
-            </tr>
+        <h2>Mini WMS</h2>
+        <input type="text" id="ref" placeholder="Référence" aria-label="Référence">
+        <input type="text" id="location" placeholder="Emplacement" aria-label="Emplacement">
+        <input type="number" id="qty" placeholder="Quantité" aria-label="Quantité">
+        <input type="text" id="user" placeholder="Utilisateur" aria-label="Utilisateur">
+        <button onclick="addStock()">Ajouter</button>
+
+        <input type="text" id="searchRef" placeholder="Rechercher une référence" aria-label="Rechercher une référence">
+        <button onclick="searchLocation()">Rechercher</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Référence</th>
+                    <th>Emplacement</th>
+                    <th>Quantité</th>
+                    <th>Créé par</th>
+                    <th>Dernier vidé par</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="stockTable"></tbody>
         </table>
     </div>
-    <script>
-        const equipe = ["Sylvain", "Greg", "Alex", "Marie", "Nadia"];
-        const table = document.getElementById("planning-table");
 
-        function generateWeeks() {
-            let startDate = new Date();
-            let currentWeekRow = null;
-            for (let i = 0; i < 10; i++) { // Générer 10 semaines
-                let row = document.createElement("tr");
-                let weekCell = document.createElement("td");
-                weekCell.textContent = `Semaine du ${startDate.toLocaleDateString('fr-FR')}`;
-                row.appendChild(weekCell);
-                for (let j = 1; j < table.rows[0].cells.length; j++) {
-                    let cell = document.createElement("td");
-                    let select = document.createElement("select");
-                    equipe.forEach(member => {
-                        let option = document.createElement("option");
-                        option.textContent = member;
-                        select.appendChild(option);
-                    });
-                    cell.appendChild(select);
-                    row.appendChild(cell);
-                }
-                table.appendChild(row);
-                startDate.setDate(startDate.getDate() + 7);
+    <script>
+        let stock = [];
+
+        function addStock() {
+            let ref = document.getElementById("ref").value;
+            let location = document.getElementById("location").value;
+            let qty = parseInt(document.getElementById("qty").value);
+            let user = document.getElementById("user").value;
+            
+            if (!ref || !location || isNaN(qty) || qty <= 0 || !user) {
+                alert("Veuillez remplir tous les champs correctement.");
+                return;
             }
-        }
-        function ajouterTache() {
-            let newTask = prompt("Entrez le nom de la nouvelle tâche :");
-            if (newTask) {
-                let headerRow = table.rows[0];
-                let newTh = document.createElement("th");
-                newTh.textContent = newTask;
-                headerRow.appendChild(newTh);
-                for (let i = 1; i < table.rows.length; i++) {
-                    let cell = document.createElement("td");
-                    let select = document.createElement("select");
-                    equipe.forEach(member => {
-                        let option = document.createElement("option");
-                        option.textContent = member;
-                        select.appendChild(option);
-                    });
-                    cell.appendChild(select);
-                    table.rows[i].appendChild(cell);
-                }
-            }
-        }
-        function supprimerTache() {
-            let headerRow = table.rows[0];
-            if (headerRow.cells.length > 1) {
-                let index = prompt("Entrez le numéro de la colonne à supprimer (1=Réception, 2=Expédition...)");
-                if (index && index >= 1 && index < headerRow.cells.length) {
-                    headerRow.deleteCell(index);
-                    for (let i = 1; i < table.rows.length; i++) {
-                        table.rows[i].deleteCell(index);
-                    }
-                }
+            
+            let existing = stock.find(s => s.ref === ref && s.location === location);
+            if (existing) {
+                existing.qty += qty;
             } else {
-                alert("Impossible de supprimer la dernière colonne !");
+                stock.push({ ref, location, qty, createdBy: user, lastClearedBy: "" });
+            }
+            renderStock();
+            clearInputs();
+        }
+
+        function searchLocation() {
+            let ref = document.getElementById("searchRef").value;
+            let results = stock.filter(s => s.ref === ref);
+            
+            if (results.length > 0) {
+                alert("Emplacements trouvés : " + results.map(s => `${s.location} (${s.qty})`).join(", "));
+            } else {
+                alert("Aucun emplacement trouvé. Vous pouvez en créer un.");
             }
         }
-        function exporterPlanning() {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            for (let i = 0; i < table.rows.length; i++) {
-                let row = [];
-                for (let j = 0; j < table.rows[i].cells.length; j++) {
-                    row.push(table.rows[i].cells[j].innerText);
-                }
-                csvContent += row.join(",") + "\n";
+
+        function deleteStock(index) {
+            let user = prompt("Entrez votre nom pour confirmer la suppression :");
+            if (user) {
+                stock[index].lastClearedBy = user;
+                stock.splice(index, 1);
+                renderStock();
             }
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "planning_logistique.csv");
-            document.body.appendChild(link);
-            link.click();
         }
-        generateWeeks();
+
+        function changeLocation(index) {
+            let newLocation = prompt("Entrez le nouvel emplacement :");
+            if (newLocation) {
+                stock[index].location = newLocation;
+                renderStock();
+            }
+        }
+
+        function renderStock() {
+            let table = document.getElementById("stockTable");
+            table.innerHTML = "";
+            stock.forEach((s, index) => {
+                let row = `<tr>
+                    <td>${s.ref}</td>
+                    <td>${s.location}</td>
+                    <td>${s.qty}</td>
+                    <td>${s.createdBy}</td>
+                    <td>${s.lastClearedBy || '-'}</td>
+                    <td class="actions">
+                        <button onclick="changeLocation(${index})" aria-label="Modifier l'emplacement">✏️</button>
+                        <button onclick="deleteStock(${index})" aria-label="Supprimer">❌</button>
+                    </td>
+                </tr>`;
+                table.innerHTML += row;
+            });
+        }
+
+        function clearInputs() {
+            document.getElementById("ref").value = "";
+            document.getElementById("location").value = "";
+            document.getElementById("qty").value = "";
+            document.getElementById("user").value = "";
+        }
     </script>
 </body>
 </html>
